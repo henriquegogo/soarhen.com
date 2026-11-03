@@ -77,7 +77,7 @@ img {
     </xsl:variable>
 
     <xsl:variable name="footer">
-<a href="/feed.xml">RSS</a> - <a href="#" onclick="location.href='mailto:'+['.com','soarhen','@','henrique'].reverse().join('')">Contact</a>
+<a href="/feed.xml">RSS</a> - <a href="mailto:henrique@" title="Type the email domain 'soarhen.com' manually">Contact</a>
     </xsl:variable>
 
     <xsl:template match="/atom:feed">
