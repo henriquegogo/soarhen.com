@@ -9,6 +9,7 @@
     <xsl:output method="html" encoding="UTF-8" indent="yes"/>
 
     <xsl:variable name="head">
+
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
 <link rel="alternate" type="application/atom+xml" title="Feed" href="https://soarhen.com/feed.xml"/>
@@ -35,6 +36,7 @@ header {
 header a {
   color: #99B;
   text-decoration: none;
+  text-transform: uppercase;
 }
 footer {
   width: 66%;
@@ -74,55 +76,109 @@ img {
   border-radius: 12px;
 }
 </style>
+
     </xsl:variable>
 
-    <xsl:variable name="footer">
-<a href="/feed.xml">RSS</a> - <a href="mailto:henrique@" title="Type the email domain 'soarhen.com' manually">Contact</a>
-    </xsl:variable>
+    <xsl:template name="footer">
 
-    <xsl:template match="/atom:feed">
+      <footer>
+        <xsl:for-each select="/site/pages/page">
+          <a href="{@path}"><xsl:value-of select="@title"/></a> - 
+        </xsl:for-each>
+        <a href="/feed.xml">RSS</a>
+      </footer>
+
+    </xsl:template>
+
+    <xsl:template match="/site">
 
         <!-- INDEX -->
         <exsl:document href="index.html" method="html" encoding="UTF-8" indent="yes">
+
 <html lang="en">
   <head>
     <xsl:copy-of select="$head"/>
-    <title><xsl:value-of select="atom:title"/></title>
+    <title><xsl:value-of select="@title"/></title>
   </head>
   <body>
-    <header><a href="/">HENRIQUE SOARES</a></header>
-    <xsl:for-each select="atom:entry">
-      <xsl:variable name="slug" select="substring-after(atom:id, 'https://soarhen.com/')"/>
+    <header><a href="{@url}"><xsl:value-of select="@title"/></a></header>
+    <xsl:for-each select="posts/post">
       <p>
-        <time><xsl:value-of select="atom:updated"/></time> - 
-        <a href="/{$slug}/"><xsl:value-of select="atom:title"/></a>
+        <time><xsl:value-of select="@date"/></time><br/> 
+        <a href="{@path}"><xsl:value-of select="@title"/></a>
       </p>
     </xsl:for-each>
-    <footer><xsl:copy-of select="$footer"/></footer>
+    <xsl:call-template name="footer"/>
   </body>
 </html>
+
         </exsl:document>
 
         <!-- POSTS -->
-        <xsl:for-each select="atom:entry">
-            <xsl:variable name="slug" select="substring-after(atom:id, 'https://soarhen.com/')"/>
-            <xsl:variable name="filename" select="concat($slug, '/index.html')"/>
+        <xsl:for-each select="posts/post">
+            <xsl:variable name="filename" select="concat(substring(@path, 2), '/index.html')"/>
             <exsl:document href="{$filename}" method="html" encoding="UTF-8" indent="yes">
+
 <html lang="en">
   <head>
     <xsl:copy-of select="$head"/>
-    <title><xsl:value-of select="atom:title"/> - Henrique Soares</title>
+    <title><xsl:value-of select="@title"/> - <xsl:value-of select="/site/@title"/></title>
   </head>
   <body>
-    <header><a href="/">HENRIQUE SOARES</a></header>
-    <h1><xsl:value-of select="atom:title"/></h1>
-    <time><xsl:value-of select="atom:updated"/></time>
-    <xsl:value-of select="atom:content" disable-output-escaping="yes"/>
-    <footer><xsl:copy-of select="$footer"/></footer>
+    <header><a href="{/site/@url}"><xsl:value-of select="/site/@title"/></a></header>
+    <h1><xsl:value-of select="@title"/></h1>
+    <time><xsl:value-of select="@date"/></time>
+    <xsl:value-of select="." disable-output-escaping="yes"/>
+    <xsl:call-template name="footer"/>
   </body>
 </html>
+
             </exsl:document>
         </xsl:for-each>
+
+        <!-- PAGES -->
+        <xsl:for-each select="pages/page">
+            <xsl:variable name="filename" select="concat(substring(@path, 2), '/index.html')"/>
+            <exsl:document href="{$filename}" method="html" encoding="UTF-8" indent="yes">
+
+<html lang="en">
+  <head>
+    <xsl:copy-of select="$head"/>
+    <title><xsl:value-of select="@title"/> - <xsl:value-of select="/site/@title"/></title>
+  </head>
+  <body>
+    <header><a href="{/site/@url}"><xsl:value-of select="/site/@title"/></a></header>
+    <h1><xsl:value-of select="@title"/></h1>
+    <xsl:value-of select="." disable-output-escaping="yes"/>
+    <xsl:call-template name="footer"/>
+  </body>
+</html>
+
+            </exsl:document>
+        </xsl:for-each>
+
+        <exsl:document href="feed.xml" method="xml" encoding="UTF-8" indent="yes">
+
+<feed xmlns="http://www.w3.org/2005/Atom">
+    <title><xsl:value-of select="@title"/></title>
+    <link href="{@url}/"/>
+    <link rel="self" href="{@url}/feed.xml"/>
+    <id><xsl:value-of select="@url"/>/</id>
+    <updated><xsl:value-of select="posts/post[1]/@date"/></updated>
+    <xsl:for-each select="posts/post">
+    <entry>
+        <title><xsl:value-of select="@title"/></title>
+        <link href="{//site/@url}{@path}/"/>
+        <id>urn:uuid:<xsl:value-of select="substring(@path, 2)"/></id>
+        <updated><xsl:value-of select="@date"/>T00:00:00Z</updated>
+        <content type="html">
+            <xsl:value-of select="." disable-output-escaping="yes"/>
+        </content>
+    </entry>
+    </xsl:for-each>
+</feed>
+
+        </exsl:document>
 
     </xsl:template>
 </xsl:stylesheet>

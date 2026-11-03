@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<site
+  title="Henrique Soares"
+  url="https://soarhen.com">
+
+  <posts>
+    <post
+      title="Phasellus posuere justo in nisl suscipit"
+      path="/phasellus-possuere"
+      date="2026-11-03"><![CDATA[
+      <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Phasellus posuere justo in nisl suscipit, sit amet finibus nunc pulvinar. Ut at maximus elit. Donec non nisl eu neque convallis vestibulum. Nulla facilisi. Duis a magna porttitor sapien vehicula luctus. Vestibulum eu lorem non augue commodo pulvinar vel ac ipsum.</p>
+
+      <pre><code>$ echo "Hello, world!"</code></pre>
+    ]]></post>
+
+    <post
+      title="Lorem ipsum dolor sit amet"
+      path="/lorem-ipsum"
+      date="2026-11-02"><![CDATA[
+      <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Phasellus posuere justo in nisl suscipit, sit amet finibus nunc pulvinar. Ut at maximus elit. Donec non nisl eu neque convallis vestibulum. Nulla facilisi. Duis a magna porttitor sapien vehicula luctus. Vestibulum eu lorem non augue commodo pulvinar vel ac ipsum.</p>
+
+      <a href="https://soarhen.com">My website</a>
+
+      <p>Quisque vel consectetur risus, interdum molestie purus.</p>
+    ]]></post>
+  </posts>
+
+  <pages>
+    <page
+      title="About"
+      path="/about"><![CDATA[
+      <p>Software developer with a passion for minimalism, C, Unix systems, and self-hosted tools.</p>
+    ]]></page>
+
+    <page
+      title="Contact"
+      path="/contact"><![CDATA[
+      <p>You can reach me via <a href="mailto:henrique@DOMAIN" title="Type the website domain manually">email</a>.</p>
+      <p>(Please replace "DOMAIN" with my website's actual domain).</p>
+    ]]></page>
+  </pages>
+
+</site>
