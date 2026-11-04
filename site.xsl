@@ -65,10 +65,11 @@ a { color: #44B; }
 li { margin: 0.5rem 0; }
 pre code {
   display: block;
-  padding: 30px;
+  padding: 10px 30px;
   color: #CCC;
   background: #111;
   border-radius: 12px;
+  overflow: auto;
 }
 img {
   max-width: 100%;
@@ -168,11 +169,13 @@ img {
     <xsl:for-each select="posts/post">
     <entry>
         <title><xsl:value-of select="@title"/></title>
-        <link href="{//site/@url}{@path}/"/>
+        <link href="{//site/@url}{@path}"/>
         <id>urn:uuid:<xsl:value-of select="substring(@path, 2)"/></id>
         <updated><xsl:value-of select="@date"/>T00:00:00Z</updated>
         <content type="html">
+            <xsl:text disable-output-escaping="yes">&lt;![CDATA[</xsl:text>
             <xsl:value-of select="." disable-output-escaping="yes"/>
+            <xsl:text disable-output-escaping="yes">]]&gt;</xsl:text>
         </content>
     </entry>
     </xsl:for-each>

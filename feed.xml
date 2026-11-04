@@ -6,27 +6,107 @@
   <id>https://soarhen.com/</id>
   <updated>2026-11-03</updated>
   <entry>
-    <title>Phasellus posuere justo in nisl suscipit</title>
-    <link href="https://soarhen.com/phasellus-possuere/"/>
-    <id>urn:uuid:phasellus-possuere</id>
+    <title>Why You Cannot Trust Your Agent (And How to Isolate It)</title>
+    <link href="https://soarhen.com/why-you-cannot-trust-your-agent"/>
+    <id>urn:uuid:why-you-cannot-trust-your-agent</id>
     <updated>2026-11-03T00:00:00Z</updated>
-    <content type="html">
-      <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Phasellus posuere justo in nisl suscipit, sit amet finibus nunc pulvinar. Ut at maximus elit. Donec non nisl eu neque convallis vestibulum. Nulla facilisi. Duis a magna porttitor sapien vehicula luctus. Vestibulum eu lorem non augue commodo pulvinar vel ac ipsum.</p>
+    <content type="html"><![CDATA[
+      <p>The rapid integration of AI code agents tools like Claude, Codex, and various internal LLM deployments into our development workflow promises unparalleled productivity. These agents, capable of reading, analyzing, and modifying complex codebases, are revolutionizing how we build software.</p>
 
-      <pre><code>$ echo "Hello, world!"</code></pre>
-    </content>
-  </entry>
-  <entry>
-    <title>Lorem ipsum dolor sit amet</title>
-    <link href="https://soarhen.com/lorem-ipsum/"/>
-    <id>urn:uuid:lorem-ipsum</id>
-    <updated>2026-11-02T00:00:00Z</updated>
-    <content type="html">
-      <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Phasellus posuere justo in nisl suscipit, sit amet finibus nunc pulvinar. Ut at maximus elit. Donec non nisl eu neque convallis vestibulum. Nulla facilisi. Duis a magna porttitor sapien vehicula luctus. Vestibulum eu lorem non augue commodo pulvinar vel ac ipsum.</p>
+      <p>However, this power comes with a critical security question: <strong>How do you prevent an autonomous, powerful AI agent from looking at your secrets, reading unrelated projects, or even accessing sensitive files outside the scope of the project you asked it to work on?</strong></p>
 
-      <a href="https://soarhen.com">My website</a>
+      <p>A recent internal technical discussion highlighted this exact dilemma. I found myself facing a choice: trust the AI's "good intentions", or implement rigorous, kernel-level isolation.</p>
 
-      <p>Quisque vel consectetur risus, interdum molestie purus.</p>
-    </content>
+      <p>Here is a breakdown of the problem, the initial theories, and the definitive technical solution we settled on.</p>
+
+      <h2 id="the-unbounded-agent-problem">The Unbounded Agent Problem</h2>
+
+      <p>When an AI agent runs locally, it typically executes as a process under your standard user account. This means that, by default, it inherits <em>all</em> the permissions of your user.</p>
+
+      <p>If you are working on <code>~/Projects/ClientA/app</code>, and the agent decides to traverse the filesystem, there is nothing in the application layer stopping it from reading configuration files, credentials, or source code in <code>~/Projects/ClientB/app</code>, or even reading your personal configuration files like <code>~/.bashrc</code> or <code>.env</code>.</p>
+
+      <p>The biggest fears are twofold:</p>
+
+      <ul>
+        <li><strong>Data Leakage (Read Access):</strong> An agent reading credentials, API keys, or proprietary information from files outside its designated scope.</li>
+        <li><strong>System Corruption (Write Access):</strong> An agent modifying system files or accidentally overwriting important personal data.</li>
+      </ul>
+
+      <p>Early solutions were often abstract:</p>
+
+      <ul>
+        <li><strong>"I just trust the AI".</strong> (The easiest, but most dangerous option).</li>
+        <li><strong>Using Docker/Podman for every single project.</strong> (Highly secure, but incredibly cumbersome and poor for developer workflow).</li>
+        <li><strong>Chroot/VM.</strong> (Effective, but massive overhead and complexity).</li>
+      </ul>
+
+      <p>The consensus quickly shifted: <strong>Application-level guardrails are not sufficient.</strong> I needed true filesystem confinement.</p>
+
+      <h2 id="the-solution-kernel-level-sandboxing-with-bwrap">The Solution: Kernel-Level Sandboxing with <code>bwrap</code></h2>
+
+      <p>The most robust way to solve this is to limit the agent's view of the filesystem at the operating system kernel level before the agent even starts running.</p>
+
+      <p>I adopted <code>bwrap</code> (bubble wrap), a powerful tool designed for creating unprivileged sandboxes in Linux. Instead of asking the AI <em>not</em> to look at <code>/etc</code>, we explicitly tell the operating system that the agent <em>cannot</em> see <code>/etc</code>.</p>
+
+      <h3 id="how-the-isolation-works">How the Isolation Works</h3>
+
+      <p>The core concept is to redefine the agent's accessible filesystem structure.</p>
+
+      <ol type="1">
+        <li><strong>Root Read-Only:</strong> The entire root filesystem (<code>/</code>) is mounted read-only, preventing any accidental system modifications.</li>
+        <li><strong>Home Directory Containment:</strong> The user's <code>HOME</code> directory is presented to the agent in a highly restricted manner.</li>
+        <li><strong>Target Bind:</strong> Only the specific project directory (<code>$TARGET</code>) is bound into the sandbox with full read/write permissions.</li>
+        <li><strong>Overlay for Persistence:</strong> Sensitive personal folders (<code>.config</code>, <code>.local</code>, <code>.cache</code>) are mounted as overlays. This means the agent can <em>read</em> these files for context, but any <em>writes</em> it makes are confined to an in-memory, temporary copy that vanishes when the session ends, preventing permanent changes to your actual configuration.</li>
+      </ol>
+
+      <p>The result is a confined environment: the agent runs in its sandbox, believing it has access to your project and necessary configurations, but it has absolutely no kernel-level path to traverse the rest of your system.</p>
+
+      <h3 id="the-technical-implementation">The Technical Implementation</h3>
+
+      <p>This Bash function creates an isolated and secure sandbox using the bubblewrap (bwrap) tool to execute programs without allowing them to permanently modify your system files or your primary home directory ($HOME).</p>
+
+      <p>The main concept is: the application runs with read-only access to the root system, and any modifications it attempts to make to your user directories happen only in your RAM (temporary storage) using overlays.</p>
+
+      <pre><code>
+confine() {
+  if [ -z "$1" ]; then
+    echo "Usage: confine [PATH] [COMMAND]"
+    return 1
+  fi
+  local TARGET=$(realpath "$1"); shift
+  mkdir -p "$HOME"/{.home,.config,.local,.cache}
+  bwrap --ro-bind / / --dev-bind /dev /dev --proc /proc \
+    --tmpfs "$HOME" --tmpfs /var/tmp --bind /tmp /tmp \
+    --overlay-src "$HOME/.home"   --tmp-overlay "$HOME" \
+    --overlay-src "$HOME/.config" --tmp-overlay "$HOME/.config" \
+    --overlay-src "$HOME/.local"  --tmp-overlay "$HOME/.local" \
+    --overlay-src "$HOME/.cache"  --tmp-overlay "$HOME/.cache" \
+    --bind "$TARGET" "$TARGET" --chdir "$TARGET" "${@:-bash}"
+}
+      </code></pre>
+
+      <p>This is where the isolation happens, line by line:</p>
+
+      <ul>
+        <li><strong><code>--ro-bind / /</code></strong>: Mounts your entire file system as <strong>Read-Only</strong>. The sandboxed program can see your system files but cannot delete, rewrite, or modify anything in <code>/usr</code>, <code>/etc</code>, etc.</li>
+        <li><strong><code>--dev-bind /dev /dev</code> and <code>--proc /proc</code></strong>: Exposes hardware devices and system process information so applications can function normally.</li>
+        <li><strong><code>--tmpfs "$HOME" --tmpfs /var/tmp</code></strong>: Mounts empty temporary filesystems in RAM over your <code>$HOME</code> and <code>/var/tmp</code>. This completely hides your actual personal files from the sandbox.</li>
+        <li><strong><code>--bind /tmp /tmp</code></strong>: Shares your host's actual temporary directory with the sandbox.</li>
+        <li><strong>The <code>--overlay-src ... --tmp-overlay ...</code> lines</strong>: Create non-destructive overlay filesystems. The sandbox can read the files from your real <code>.config</code> or <code>.local</code> folders, but <strong>any new files or changes are written to temporary RAM storage</strong>. When the sandbox closes, those changes vanish.</li>
+        <li><strong><code>--bind "$TARGET" "$TARGET"</code></strong>: Makes an exception for your target folder. It mounts your specified path with real read/write access. <strong>Any files created or modified inside this folder will be saved permanently to your disk.</strong></li>
+        <li><strong><code>--chdir "$TARGET"</code></strong>: Changes the working directory inside the sandbox to your target folder automatically.</li>
+        <li><strong><code>"${@:-bash}"</code></strong>: Executes the command you passed after the path. If you didn't specify a command, it drops you into an isolated <code>bash</code> shell by default.</li>
+      </ul>
+
+      <h2 id="security-vs-convenience">Security vs. Convenience</h2>
+
+      <p>The lesson from this discussion is clear: <strong>Never rely solely on the policy or "settings" of an LLM application for security.</strong></p>
+
+      <p>Whether you are using Claude, Codex, or a proprietary internal model, the underlying execution environment is the critical control point. If the agent runs under your user account, it has your user's power.</p>
+
+      <p>For professional environments, especially those handling multiple client projects, the answer isn't "trust", and it isn't always a massive, resource-intensive VM for every task. The answer is <strong>granular, kernel-level filesystem confinement.</strong></p>
+
+      <p>By wrapping the agent in a robust sandbox, we move the security conversation from "Will the AI be well-behaved?" to "Is the operating system enforcing the boundaries?" And that is always the safer bet.</p>
+      ]]></content>
   </entry>
 </feed>
