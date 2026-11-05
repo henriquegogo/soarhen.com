@@ -4,7 +4,75 @@
   <link href="https://soarhen.com/"/>
   <link rel="self" href="https://soarhen.com/feed.xml"/>
   <id>https://soarhen.com/</id>
-  <updated>2026-11-03</updated>
+  <updated>2026-11-05</updated>
+  <entry>
+    <title>lowvram: How to run large AI models in low VRAM GPUs</title>
+    <link href="https://soarhen.com/how-run-ai-in-low-vram"/>
+    <id>urn:uuid:how-run-ai-in-low-vram</id>
+    <updated>2026-11-05T00:00:00Z</updated>
+    <content type="html"><![CDATA[
+      <p>Sometimes the cutting-edge AI tools require more GPU memory than consumer hardware can provide. When standard optimization fails, custom solutions are needed. Here is how I tackled the memory wall using a simple intercept layer.</p>
+
+      <h2>The VRAM Problem: YuE2 Scenario</h2>
+
+      <p>I recently wanted to explore <a href="https://github.com/multimodal-art-projection/YuE" target="_blank">YuE2</a>: frontier music generation. The requirements were clear: <em>Linux, Python 3.12, an NVIDIA GPU supporting BF16, and critically, 24 GB of VRAM</em>. My setup, featuring an <em>NVIDIA GeForce RTX 3060 with only 6 GB of VRAM</em>, was fundamentally incompatible right out of the box.</p>
+
+      <p>My first attempt was to adapt the existing code, leveraging PyTorch's CPU offloading capabilities. This required deep diving into the YuE2 source code, which was time-consuming and fragile—any update to the tool broke my customized solution. I needed a solution that was agnostic, something that could run without touching the underlying application code.</p>
+
+      <h2>The Solution: Creating lowvram</h2>
+
+      <p>The goal was to intercept the GPU memory requests at the driver level. This led to the creation of <code>lowvram</code>, a tool designed to wrap CUDA programs and allow them to run even when VRAM is insufficient.</p>
+
+      <p>In short, <code>lowvram</code> intercepts CUDA calls in the library layer, trickng the application into believing that system RAM is available for use by the GPU kernel.</p>
+
+      <p>You can find the source code and documentation for the tool here: <a href="https://github.com/henriquegogo/lowvram" target="_blank">lowvram on GitHub</a>.</p>
+
+      <h3>How lowvram works</h3>
+
+      <ul>
+        <li><strong>Memory Interception:</strong> It replaces the standard <code>cuMemAlloc</code> calls (which usually only use VRAM) with <code>cuMemAllocManaged</code>.</li>
+        <li><strong>Managed Memory:</strong> This tells the NVIDIA driver to keep the data pages in VRAM as long as they are active, but to move idle pages into system RAM (Host Memory).</li>
+        <li><strong>Transparent Usage:</strong> The application and its kernels still see standard device pointers. The driver handles the complex movement of data across the PCIe bus when necessary.</li>
+        <li><strong>Execution:</strong> By using <code>LD_PRELOAD</code> or the wrapper, the tool ensures its hooks are active before the target application begins execution.</li>
+      </ul>
+
+      <h2>Practical Application: YuE2 and Beyond</h2>
+
+      <p>The effectiveness of this approach was demonstrated across several use cases where memory constraints usually halt execution.</p>
+
+      <h3>Case 1: YuE2 (Music Generation)</h3>
+
+      <p>While the specific setup for YuE2 is complex, the philosophy holds: by using <code>lowvram</code>, the model attempts to load and run on a 6GB card, trading raw speed for the ability to execute the workload that would otherwise fail with a "CUDA Out of Memory" error.</p>
+
+      <p><img src="graph-yue.png"/></p>
+
+      <p>Unmodified PyTorch cannot load YuE2 on this GPU. Under lowvram the same code generates 43.1 tokens per second (range over runs 41.0–46.0): 95% of the 45.3 tokens per second of the oracle, which runs the AR half from ordinary device memory after we deleted the NAR half by hand. Accelerate, the standard way to run an oversized Hugging Face model, reaches 1.9 tokens per second-lowvram is 23× faster-and the CPU 6.8.</p>
+
+      <h3>Case 2: Llama-TTS and Qwen3-TTS</h3>
+
+      <p>A clear, practical demonstration involved using Llama-TTS with the Qwen3-TTS model. Standard execution resulted in an immediate <code>cudaMalloc failed: out of memory</code> error.</p>
+
+      <p>By simply prepending the tool:</p>
+
+      <pre><code>$ lowvram llama-tts -m Qwen3-TTS-12Hz-1.7B-Base-Q8_0.gguf -mm mmproj-Qwen3-TTS-12Hz-1.7B-Base-Q8_0.gguf --tts-lang en -p "Hello, world"</code></pre>
+
+      <p>The program ran successfully.</p>
+
+      <h2>Limitations and Considerations</h2>
+
+      <p>While <code>lowvram</code> provides a powerful workaround, it is not a silver bullet. It involves fundamental changes to how the GPU interacts with system resources, and these changes come with performance trade-offs. It is crucial to be aware of these limitations:</p>
+
+      <ul>
+        <li><strong>Performance Hit:</strong> Once the working set of the model exceeds the physical VRAM capacity, data must be moved across the PCIe bus to and from system RAM. This paging mechanism significantly slows down computation.</li>
+        <li><strong>System RAM Usage:</strong> Because it utilizes managed memory, the tool can potentially exhaust system RAM if the model attempts to allocate indefinitely, as the reported "free" memory does not shrink as managed memory is used.</li>
+        <li><strong>Complexity:</strong> The tool is Linux-specific and requires a solid understanding of the CUDA runtime environment to utilize correctly.</li>
+      </ul>
+
+      <h2>Conclusion</h2>
+
+      <p>In the realm of local AI deployment, the barrier between a perfect setup and a functional setup can often be just one line of code or one tool. If a powerful CUDA application simply won't fit your GPU, a highly practical and clever solution like <code>lowvram</code> offers a pathway to run it. It prioritizes functionality over peak performance, proving that sometimes, the most practical approach is the simplest one.</p>
+    ]]></content>
+  </entry>
   <entry>
     <title>Why You Cannot Trust Your Agent (And How to Isolate It)</title>
     <link href="https://soarhen.com/why-you-cannot-trust-your-agent"/>
