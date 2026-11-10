@@ -66,14 +66,27 @@ img {
   border: none;
   border-radius: 12px;
 }
+#email label {
+  color: #44B;
+  text-decoration: underline;
+  cursor: pointer;
+}
+#email i { display: none; }
+#email input[type=checkbox] { display: none; }
+#email :checked ~ label { display: none; }
+#email :checked ~ i:nth-child(odd) { display: inline; }
 </style>
 <title>Contact - Henrique Soares</title>
 </head>
 <body>
 <header><a href="https://soarhen.com">Henrique Soares</a></header><h1>Contact</h1>
-      <p>You can reach me via <a href="mailto:henrique@DELETEsoarhen.com" title="Remove 'DELETE' word manually">email</a>.</p>
-
-      <p>(Please remove <em>"DELETE"</em> word manually from email address).</p>
+      <p>You can reach me via
+        <span id="email">
+          <input type="checkbox" id="show"/>
+          <label for="show">email</label>
+          <i>henrique</i><i>henrique</i><i>@</i><i>soarhen</i><i>soarhen</i><i>.com</i><i>.com</i>
+        </span>
+      </p>
     <footer><a href="/about">About</a> - 
         <a href="/contact">Contact</a> - 
         <a href="/feed.xml">RSS</a></footer>

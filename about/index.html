@@ -66,6 +66,15 @@ img {
   border: none;
   border-radius: 12px;
 }
+#email label {
+  color: #44B;
+  text-decoration: underline;
+  cursor: pointer;
+}
+#email i { display: none; }
+#email input[type=checkbox] { display: none; }
+#email :checked ~ label { display: none; }
+#email :checked ~ i:nth-child(odd) { display: inline; }
 </style>
 <title>About - Henrique Soares</title>
 </head>

@@ -189,9 +189,13 @@ confine() {
     <page
       title="Contact"
       path="/contact"><![CDATA[
-      <p>You can reach me via <a href="mailto:henrique@DELETEsoarhen.com" title="Remove 'DELETE' word manually">email</a>.</p>
-
-      <p>(Please remove <em>"DELETE"</em> word manually from email address).</p>
+      <p>You can reach me via
+        <span id="email">
+          <input type="checkbox" id="show"/>
+          <label for="show">email</label>
+          <i>henrique</i><i>henrique</i><i>@</i><i>soarhen</i><i>soarhen</i><i>.com</i><i>.com</i>
+        </span>
+      </p>
     ]]></page>
   </pages>
 
