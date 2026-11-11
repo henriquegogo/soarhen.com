@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <feed xmlns="http://www.w3.org/2005/Atom">
   <title>Henrique Soares</title>
-  <link href="https://soarhen.com/"/>
+  <link href="https://soarhen.com"/>
   <link rel="self" href="https://soarhen.com/feed.xml"/>
   <id>https://soarhen.com/</id>
   <updated>2026-11-05</updated>
   <entry>
     <title>lowvram: How to run large AI models in low VRAM GPUs</title>
-    <link href="https://soarhen.com/how-run-ai-in-low-vram"/>
+    <link href="https://soarhen.com/how-run-ai-in-low-vram/"/>
     <id>urn:uuid:how-run-ai-in-low-vram</id>
     <updated>2026-11-05T00:00:00Z</updated>
     <content type="html"><![CDATA[
@@ -17,7 +17,7 @@
 
       <p>I recently wanted to explore <a href="https://github.com/multimodal-art-projection/YuE" target="_blank">YuE2</a>: frontier music generation. The requirements were clear: <em>Linux, Python 3.12, an NVIDIA GPU supporting BF16, and critically, 24 GB of VRAM</em>. My setup, featuring an <em>NVIDIA GeForce RTX 3060 with only 6 GB of VRAM</em>, was fundamentally incompatible right out of the box.</p>
 
-      <p>My first attempt was to adapt the existing code, leveraging PyTorch's CPU offloading capabilities. This required deep diving into the YuE2 source code, which was time-consuming and fragile—any update to the tool broke my customized solution. I needed a solution that was agnostic, something that could run without touching the underlying application code.</p>
+      <p>My first attempt was to adapt the existing code, leveraging PyTorch's CPU offloading capabilities. This required deep diving into the YuE2 source code, which was time-consuming and fragile-any update to the tool broke my customized solution. I needed a solution that was agnostic, something that could run without touching the underlying application code.</p>
 
       <h2>The Solution: Creating lowvram</h2>
 
@@ -75,7 +75,7 @@
   </entry>
   <entry>
     <title>Why You Cannot Trust Your Agent (And How to Isolate It)</title>
-    <link href="https://soarhen.com/why-you-cannot-trust-your-agent"/>
+    <link href="https://soarhen.com/why-you-cannot-trust-your-agent/"/>
     <id>urn:uuid:why-you-cannot-trust-your-agent</id>
     <updated>2026-11-03T00:00:00Z</updated>
     <content type="html"><![CDATA[

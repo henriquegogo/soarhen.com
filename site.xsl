@@ -12,7 +12,7 @@
 
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<link rel="alternate" type="application/atom+xml" title="Feed" href="https://soarhen.com/feed.xml"/>
+<link rel="alternate" type="application/atom+xml" title="Feed" href="{/site/@url}/feed.xml"/>
 <style>
 html {
   font-family: monospace;
@@ -93,9 +93,9 @@ img {
 
       <footer>
         <xsl:for-each select="/site/pages/page">
-          <a href="{@path}"><xsl:value-of select="@title"/></a> - 
+          <a href="{/site/@url}{@path}/"><xsl:value-of select="@title"/></a> - 
         </xsl:for-each>
-        <a href="/feed.xml">RSS</a>
+        <a href="{/site/@url}/feed.xml">RSS</a>
       </footer>
 
     </xsl:template>
@@ -115,7 +115,7 @@ img {
     <xsl:for-each select="posts/post">
       <p>
         <time><xsl:value-of select="@date"/></time><br/> 
-        <a href="{@path}"><xsl:value-of select="@title"/></a>
+        <a href="{/site/@url}{@path}/"><xsl:value-of select="@title"/></a>
       </p>
     </xsl:for-each>
     <xsl:call-template name="footer"/>
@@ -171,14 +171,14 @@ img {
 
 <feed xmlns="http://www.w3.org/2005/Atom">
     <title><xsl:value-of select="@title"/></title>
-    <link href="{@url}/"/>
+    <link href="{@url}"/>
     <link rel="self" href="{@url}/feed.xml"/>
     <id><xsl:value-of select="@url"/>/</id>
     <updated><xsl:value-of select="posts/post[1]/@date"/></updated>
     <xsl:for-each select="posts/post">
     <entry>
         <title><xsl:value-of select="@title"/></title>
-        <link href="{//site/@url}{@path}"/>
+        <link href="{//site/@url}{@path}/"/>
         <id>urn:uuid:<xsl:value-of select="substring(@path, 2)"/></id>
         <updated><xsl:value-of select="@date"/>T00:00:00Z</updated>
         <content type="html">
